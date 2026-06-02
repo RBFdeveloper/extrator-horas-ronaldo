@@ -281,17 +281,29 @@ def aplicar_logica_ajustes(df_base):
         df_base['Key_D_Comp'] = pd.to_datetime(df_base['Data'], dayfirst=True, errors='coerce')
         
         for _, row in df_ajustes.iterrows():
-            try:
-                dt_ajuste = pd.to_datetime(row['Data'], dayfirst=True, errors='coerce')
-                tec_ajuste = str(row['Técnico']).strip()
-                metrica_ajuste = mapa.get(row['Métrica'])
-                valor_ajuste = float(str(row['Valor']).replace(',', '.'))
+    try:
+        dt_ajuste = pd.to_datetime(row['Data'], dayfirst=True, errors='coerce')
+        tec_ajuste = str(row['Técnico']).strip()
+        metrica_ajuste = mapa.get(row['Métrica'])
 
-                if metrica_ajuste and metrica_ajuste in df_base.columns:
-                    mask = (df_base['Key_D_Comp'] == dt_ajuste) & (df_base['Técnico'] == tec_ajuste)
-                    if mask.any():
-                        df_base.loc[mask, metrica_ajuste] += valor_ajuste
-            except: continue
+        valor_ajuste = float(str(row['Valor']).replace(',', '.'))
+
+        # IMPORTANTE:
+        # como o consolidado é dividido por 100,
+        # o ajuste também precisa ser dividido por 100
+        valor_ajuste = valor_ajuste / 100.0
+
+        if metrica_ajuste and metrica_ajuste in df_base.columns:
+            mask = (
+                (df_base['Key_D_Comp'] == dt_ajuste) &
+                (df_base['Técnico'] == tec_ajuste)
+            )
+
+            if mask.any():
+                df_base.loc[mask, metrica_ajuste] += valor_ajuste
+
+    except:
+        continue
         
         if 'Key_D_Comp' in df_base.columns:
             df_base.drop(columns=['Key_D_Comp'], inplace=True)
